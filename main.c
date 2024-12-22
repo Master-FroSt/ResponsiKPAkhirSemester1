@@ -24,6 +24,7 @@ struct enemy{
 void acakStatus(struct player* player);
 void reroll(struct player* player);
 void gunakanSenjata(struct player* player);
+void serang(struct player* player, struct enemy* enemy, int isPlayerAttacking);
 
 int main(){
     //inisialisasi bonus weapon
@@ -67,7 +68,17 @@ int main(){
     }
     gunakanSenjata(&pemain);
     printf("Status anda adalah\nHP = %d\nATK = %d\nDEF = %d\n", pemain.hp, pemain.atk, pemain.def);
-
+    
+    //Aksi secara turn-based
+    unsigned int turn = 0;
+    while(pemain.hp > 0 && witch.hp > 0) {
+        if (turn % 2 == 0) {
+            serang(&pemain, &witch, 1);
+        } else {
+            serang(&pemain, &witch, 0);
+        }
+        turn++;
+    }
     //Penutup
     printf("Hello World");
     return 0;
@@ -110,4 +121,27 @@ void gunakanSenjata(struct player* player){
     player->hp += player->senjata->hpBonus;
     player->atk += player->senjata->atkBonus;
     player->def += player->senjata->defBonus;
+}
+
+void serang(struct player* player, struct enemy* enemy, int isPlayerAttacking){
+    int damage;
+    if (isPlayerAttacking == 1) {
+        damage = player->atk - enemy->def;
+        enemy->hp -= damage;
+        printf("Anda menyerang musuh dengan damage %d!\n", damage);
+        if(enemy->hp > 0) {
+            printf("HP musuh sekarang: %d\n", enemy->hp);
+        } else {
+            puts("HP musuh habis, silakan lanjut!");
+        }
+    } else {
+        damage = enemy->atk - player->def;
+        player->hp -= damage;
+        printf("Musuh menyerang Anda dengan damage %d!\n", damage);
+        if(player->hp > 0) {
+            printf("HP Anda sekarang: %d\n", player->hp);
+        } else {
+            puts("HP Anda habis, anda telah dikalahkan!");
+        }
+    }
 }
