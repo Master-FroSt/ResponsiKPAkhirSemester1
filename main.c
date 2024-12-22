@@ -20,74 +20,147 @@ struct enemy{
     int def;
 };
 
+//inisialisasi struct
+struct weapon sword = {0, 15, 1};
+struct weapon claymore = {0, 5, 10};
+struct enemy musuh[6];
+
 //function prototype
+void startScreen();
+void endScreen();
+void initMusuh();
 void acakStatus(struct player* player);
 void reroll(struct player* player);
 void gunakanSenjata(struct player* player);
 void serang(struct player* player, struct enemy* enemy, int isPlayerAttacking);
+void statusMusuh(struct enemy musuh[], int lawan);
 
 int main(){
-    //inisialisasi bonus weapon
-    struct weapon sword = {0, 10, 1};
-    struct weapon claymore = {0, 5, 10};
+    //Layar permulaan
+    int menuAwal;
+    startScreen();
 
-    //inisialisasi status enemy
-    struct enemy zombie = {100, 5, 5};
-    struct enemy witch = {50, 25, 1};
-    struct enemy org = {1000, 10, 20};
+    //Perulangan permainan
+    int menuAkhir;
+    int retry = 1;
+    while (retry) {
+        //inisialisasi status player secara acak
+        srand(time(NULL));
+        struct player pemain;
+        acakStatus(&pemain);
 
-    //inisialisasi status player secara acak
-    srand(time(NULL));
-    struct player pemain;
-    acakStatus(&pemain);
-    printf("Status anda adalah\nHP = %d\nATK = %d\nDEF = %d\n", pemain.hp, pemain.atk, pemain.def);
+        //Fitur pengacakan status player
+        reroll(&pemain);
 
-    //Fitur pengacakan status player
-    reroll(&pemain);
+        //pemilihan senjata
+        unsigned int perlengkapan;
+        unsigned int statusPerlengkapan = 1;
+        while(1){
+            puts("Pilih Senjata:\n1. Sword (+15atk, +1def)\n2. Claymore(+5atk, +10def)");
+            scanf("%d", &perlengkapan);
+            switch (perlengkapan) {
+                case 1:
+                pemain.senjata = &sword;
+                statusPerlengkapan = 0;
+                break;
+                case 2:
+                pemain.senjata = &claymore;
+                statusPerlengkapan = 0;
+                break;
+                default:
+                puts("Masukan tidak valid. Ulangi!");
+                break;
+            }
+            if (statusPerlengkapan == 0) break;
+        }
+        gunakanSenjata(&pemain);
+        printf("Status anda adalah\nHP = %d\nATK = %d\nDEF = %d\n", pemain.hp, pemain.atk, pemain.def);
+        
+        //Aksi secara turn-based
+        getchar();//Menangkap masukan sebelumnya (jika ada)
+        unsigned int turn = 0;
+        unsigned int lawan = 0;
+        initMusuh();
+        while(lawan < 6) {
+            printf("Status anda sekarang adalah\nHP = %d\nATK = %d\nDEF = %d\n", pemain.hp, pemain.atk, pemain.def);
+            statusMusuh(musuh, lawan);
+            puts("Tekan enter untuk bertarung...");
+            getchar(); //Menunggu masukan untuk memulai
+            while(pemain.hp > 0 && musuh[lawan].hp > 0) {
+                if (turn % 2 == 0) {
+                    serang(&pemain, &musuh[lawan], 1);
+                } else {
+                    serang(&pemain, &musuh[lawan], 0);
+                }
+                turn++;
+            }
+            if(pemain.hp < 0) break;
+            if(musuh[lawan].hp < 0) lawan++;
+        }
 
-    //pemilihan senjata
-    unsigned int perlengkapan;
-    unsigned int statusPerlengkapan = 1;
-    while(1){
-        puts("Pilih Senjata:\n1. Sword\n2. Claymore");
-        scanf("%d", &perlengkapan);
-        switch (perlengkapan) {
+        //Penutup
+        if(pemain.hp < 0) {
+            puts("Anda kalah!");
+            printf("Jumlah giliran yang terjadi: %u\n", turn);
+            printf("Musuh yang anda kalahkan: %d\n", lawan);
+        }
+        endScreen();
+        scanf("%d", &menuAkhir);
+        switch (menuAkhir) {
             case 1:
-            pemain.senjata = &sword;
-            statusPerlengkapan = 0;
-            break;
+                puts("Anda memilih menu Bermain lagi!");
+                break;
             case 2:
-            pemain.senjata = &claymore;
-            statusPerlengkapan = 0;
-            break;
+                puts("Sampai jumpa lagi!");
+                retry = 0;
+                break;
             default:
-            puts("Masukan tidak valid. Ulangi!");
-            break;
+                puts("Masukan tidak valid. Ulangi!");
         }
-        if (statusPerlengkapan == 0) break;
     }
-    gunakanSenjata(&pemain);
-    printf("Status anda adalah\nHP = %d\nATK = %d\nDEF = %d\n", pemain.hp, pemain.atk, pemain.def);
-    
-    //Aksi secara turn-based
-    unsigned int turn = 0;
-    while(pemain.hp > 0 && witch.hp > 0) {
-        if (turn % 2 == 0) {
-            serang(&pemain, &witch, 1);
-        } else {
-            serang(&pemain, &witch, 0);
-        }
-        turn++;
-    }
-    //Penutup
-    printf("Hello World");
     return 0;
 }
 
+void startScreen() {
+    puts("Selamat Datang di permainan Tebas!");
+    puts("----------------------------------");
+}
+
+void endScreen() {
+    puts("Terima kasih sudah bermain Tebas!");
+    puts("-------------------------------");
+    puts("1. Bermain lagi");
+    puts("2. Keluar");
+    puts("-------------------------------");
+    puts("Pilih menu: ");
+}
+
+void initMusuh() {
+    srand(time(NULL));
+    for (int i = 0; i < 6; i++) {
+        if (i == 3 || i == 5) {
+            musuh[i].hp = 1000;
+            musuh[i].atk = 40;
+            musuh[i].def = 20; // Ogre (boss)
+        } else {
+            int jenisMusuh = rand() % 2;
+            if (jenisMusuh == 0) {
+                musuh[i].hp = 100;
+                musuh[i].atk = 25;
+                musuh[i].def = 5; // Zombie
+            } else {
+                musuh[i].hp = 50;
+                musuh[i].atk = 50;
+                musuh[i].def = 0; // Witch
+            }
+        }
+    }
+}
+
 void acakStatus(struct player* player){
-    player->hp = (100 + rand() % 100);
-    player->atk = (10 + rand() % 10);
-    player->def = (10 + rand() % 10);
+    player->hp = (1000 + rand() % 1000);
+    player->atk = (20 + rand() % 20);
+    player->def = (0 + rand() % 20);
 }
 
 void reroll(struct player* player){
@@ -144,4 +217,11 @@ void serang(struct player* player, struct enemy* enemy, int isPlayerAttacking){
             puts("HP Anda habis, anda telah dikalahkan!");
         }
     }
+}
+
+void statusMusuh(struct enemy musuh[], int lawan) {
+    printf("Musuh ke-%d/6:\n", lawan+1);
+    printf("HP: %d\n", musuh[lawan].hp);
+    printf("ATK: %d\n", musuh[lawan].atk);
+    printf("DEF: %d\n", musuh[lawan].def);
 }
