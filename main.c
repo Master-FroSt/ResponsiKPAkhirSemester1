@@ -34,6 +34,8 @@ void reroll(struct player* player);
 void gunakanSenjata(struct player* player);
 void serang(struct player* player, struct enemy* enemy, int isPlayerAttacking);
 void statusMusuh(struct enemy musuh[], int lawan);
+void statusPemain(struct player* player);
+void menungguAksi();
 
 int main(){
     //Layar permulaan
@@ -48,6 +50,7 @@ int main(){
         srand(time(NULL));
         struct player pemain;
         acakStatus(&pemain);
+        statusPemain(&pemain);
 
         //Fitur pengacakan status player
         reroll(&pemain);
@@ -56,7 +59,7 @@ int main(){
         unsigned int perlengkapan;
         unsigned int statusPerlengkapan = 1;
         while(1){
-            puts("Pilih Senjata:\n1. Sword (+15atk, +1def)\n2. Claymore(+5atk, +10def)");
+            printf("║ 1. Sword (+15atk, +1def)\n║ 2. Claymore(+5atk, +10def)\n║ Pilih Senjata:");
             scanf("%d", &perlengkapan);
             switch (perlengkapan) {
                 case 1:
@@ -68,13 +71,13 @@ int main(){
                 statusPerlengkapan = 0;
                 break;
                 default:
-                puts("Masukan tidak valid. Ulangi!");
+                puts("║ Masukan tidak valid. Ulangi!");
                 break;
             }
             if (statusPerlengkapan == 0) break;
         }
         gunakanSenjata(&pemain);
-        printf("Status anda adalah\nHP = %d\nATK = %d\nDEF = %d\n", pemain.hp, pemain.atk, pemain.def);
+        menungguAksi();
         
         //Aksi secara turn-based
         getchar();//Menangkap masukan sebelumnya (jika ada)
@@ -82,10 +85,10 @@ int main(){
         unsigned int lawan = 0;
         initMusuh();
         while(lawan < 6) {
-            printf("Status anda sekarang adalah\nHP = %d\nATK = %d\nDEF = %d\n", pemain.hp, pemain.atk, pemain.def);
+            statusPemain(&pemain);
             statusMusuh(musuh, lawan);
-            puts("Tekan enter untuk bertarung...");
-            getchar(); //Menunggu masukan untuk memulai
+            menungguAksi();
+            puts("⚔️ Pertarungan dimulai! ⚔️");
             while(pemain.hp > 0 && musuh[lawan].hp > 0) {
                 if (turn % 2 == 0) {
                     serang(&pemain, &musuh[lawan], 1);
@@ -99,40 +102,41 @@ int main(){
         }
 
         //Penutup
-        if(pemain.hp < 0) {
-            puts("Anda kalah!");
-            printf("Jumlah giliran yang terjadi: %u\n", turn);
-            printf("Musuh yang anda kalahkan: %d\n", lawan);
-        }
+        puts("");
+        puts("║ Hasil Pertarungan: ");
+        printf("║ Jumlah giliran yang terjadi: %u ⏰\n", turn);
+        printf("║ Musuh yang anda kalahkan: %d 👊\n", lawan);
+        menungguAksi();
         endScreen();
         scanf("%d", &menuAkhir);
         switch (menuAkhir) {
             case 1:
-                puts("Anda memilih menu Bermain lagi!");
+                puts("║ Anda memilih menu Bermain lagi!");
+                menungguAksi();
                 break;
             case 2:
-                puts("Sampai jumpa lagi!");
+                puts("║ Sampai jumpa lagi!");
                 retry = 0;
                 break;
             default:
-                puts("Masukan tidak valid. Ulangi!");
+                puts("║ Masukan tidak valid. Ulangi!");
         }
     }
     return 0;
 }
 
 void startScreen() {
-    puts("Selamat Datang di permainan Tebas!");
-    puts("----------------------------------");
+    puts("║ Selamat Datang di permainan Tebas!");
+    puts("║ ----------------------------------");
 }
 
 void endScreen() {
-    puts("Terima kasih sudah bermain Tebas!");
-    puts("-------------------------------");
-    puts("1. Bermain lagi");
-    puts("2. Keluar");
-    puts("-------------------------------");
-    puts("Pilih menu: ");
+    puts("║ Terima kasih sudah bermain Tebas!");
+    puts("║ ---------------------------------");
+    puts("║ 1. Bermain lagi");
+    puts("║ 2. Keluar");
+    puts("║ ---------------------------------");
+    printf("║ Pilih menu: ");
 }
 
 void initMusuh() {
@@ -168,14 +172,14 @@ void reroll(struct player* player){
     unsigned int statusReroll = 1;
     char pilihan;
     while (1) {
-        printf("Apakah Anda ingin reroll status? (%u kesempatan) (y/n): ", reroll);
+        printf("║ Apakah Anda ingin reroll status? (%u kesempatan) (y/n): ", reroll);
         scanf(" %c", &pilihan);
         //switch untuk reroll]
         switch (pilihan) {
             case 'y':
             case 'Y':
             acakStatus(player);
-            printf("Status baru Anda adalah\nHP = %d\nATK = %d\nDEF = %d\n", player->hp, player->atk, player->def);
+            statusPemain(player);;
             reroll--;
             break;
             case 'n':
@@ -183,7 +187,7 @@ void reroll(struct player* player){
             statusReroll = 0;
             break;
             default:
-            puts("Masukan tidak valid. Ulangi!");
+            puts("║ Masukan tidak valid. Ulangi!");
             break;
         }
         if (reroll == 0 || statusReroll == 0) break;
@@ -201,27 +205,49 @@ void serang(struct player* player, struct enemy* enemy, int isPlayerAttacking){
     if (isPlayerAttacking == 1) {
         damage = player->atk - enemy->def;
         enemy->hp -= damage;
-        printf("Anda menyerang musuh dengan damage %d!\n", damage);
+        printf("║ Anda menyerang musuh dengan damage %d! 💥\n", damage);
         if(enemy->hp > 0) {
-            printf("HP musuh sekarang: %d\n", enemy->hp);
+            printf("║ HP musuh sekarang: %d 💔\n", enemy->hp);
         } else {
-            puts("HP musuh habis, silakan lanjut!");
+            puts("║ HP musuh habis, silakan lanjut! 👏");
+            menungguAksi();
         }
     } else {
         damage = enemy->atk - player->def;
         player->hp -= damage;
-        printf("Musuh menyerang Anda dengan damage %d!\n", damage);
+        printf("║ Musuh menyerang Anda dengan damage %d! 🔥\n", damage);
         if(player->hp > 0) {
-            printf("HP Anda sekarang: %d\n", player->hp);
+            printf("║ HP Anda sekarang: %d ❤️\n", player->hp);
         } else {
-            puts("HP Anda habis, anda telah dikalahkan!");
+            puts("║ HP Anda habis, Anda telah dikalahkan! 😱");
+            menungguAksi();
         }
     }
 }
 
 void statusMusuh(struct enemy musuh[], int lawan) {
-    printf("Musuh ke-%d/6:\n", lawan+1);
-    printf("HP: %d\n", musuh[lawan].hp);
-    printf("ATK: %d\n", musuh[lawan].atk);
-    printf("DEF: %d\n", musuh[lawan].def);
+    printf("    Musuh ke-%d/6:\n", lawan+1);
+    printf("╔═══════════════════╗\n");
+    printf("║  Status  ║  Nilai ║\n");
+    printf("╠═══════════════════╣\n");
+    printf("║  HP      ║  %-5d ║\n", musuh[lawan].hp);
+    printf("║  ATK     ║  %-5d ║\n", musuh[lawan].atk);
+    printf("║  DEF     ║  %-5d ║\n", musuh[lawan].def);
+    printf("╚═══════════════════╝\n");
+}
+
+void statusPemain(struct player* player) {
+    printf("  👊 Status Anda 👊\n");
+    printf("╔═══════════════════╗\n");
+    printf("║  Status  ║  Nilai ║\n");
+    printf("╠═══════════════════╣\n");
+    printf("║  HP      ║  %-5d ║\n", player->hp);
+    printf("║  ATK     ║  %-5d ║\n", player->atk);
+    printf("║  DEF     ║  %-5d ║\n", player->def);
+    printf("╚═══════════════════╝\n");
+}
+
+void menungguAksi() {
+    puts("║ Tekan enter untuk melanjutkan...");
+    getchar(); //Menunggu masukan untuk memulai
 }
